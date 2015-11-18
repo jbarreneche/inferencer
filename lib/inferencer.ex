@@ -1,29 +1,6 @@
 defmodule Inferencer do
   defstruct working_memory: %HashSet{}, productions: []
 
-  def test do
-    reset
-    assert(Fact.new(:p))
-    assert(Fact.new(:q))
-    assert(Fact.new(:r))
-    add_rule(%Production{
-      lhs: [ Condition.build_constant(:p), Condition.build_constant(:q) ],
-      rhs: [ Fact.new(:s) ]
-    })
-    add_rule(%Production{
-      lhs: [ Condition.build_constant(:r) ],
-      rhs: [ Fact.new(:t) ]
-    })
-    add_rule(%Production{
-      lhs: [ Condition.build_constant(:s), Condition.build_constant(:t) ],
-      rhs: [ Fact.new(:u) ]
-    })
-    add_rule(%Production{
-      lhs: [ Condition.build_constant(:s), Condition.build_constant(:r) ],
-      rhs: [ Fact.new(:v) ]
-    })
-  end
-
   def start_link(name \\ __MODULE__) do
     Agent.start_link(fn -> %Inferencer{} end, name: name)
   end
@@ -43,6 +20,7 @@ defmodule Inferencer do
   def state(inferencer \\ __MODULE__) do
     Agent.get(inferencer, &({&1.working_memory, &1.productions}))
   end
+
   def working_memory(inferencer \\ __MODULE__) do
     Agent.get(inferencer, &(&1.working_memory))
   end
