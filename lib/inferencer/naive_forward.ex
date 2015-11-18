@@ -10,7 +10,7 @@ defmodule Inferencer.NaiveForward do
 
   defp try_new_solutions(productions, wmes, goal, conflict_set \\ %HashSet{}) do
     new_conflicts =
-      Enum.flat_map(productions, fn production -> Production.matchings(production, wmes) end)
+      Enum.flat_map(productions, fn production -> Production.matchings_lhs(production, wmes) end)
       |> Enum.into(%HashSet{}) |> Set.difference(conflict_set) |> Set.to_list
 
     case new_conflicts do

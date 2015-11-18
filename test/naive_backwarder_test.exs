@@ -1,6 +1,6 @@
-defmodule NaiveForwardTest do
+defmodule NaiveBackwardTest do
   use ExUnit.Case
-  doctest Inferencer.NaiveForward
+  doctest Inferencer.NaiveBackward
 
   setup do
     {:ok, pid } = Inferencer.start_link
@@ -33,17 +33,22 @@ defmodule NaiveForwardTest do
   end
 
   test "Solves already defined facts" do
-    solution = Inferencer.NaiveForward.solve(Condition.build_constant(:p))
+    solution = Inferencer.NaiveBackward.solve(Condition.build_constant(:p))
     assert solution == Fact.new(:p)
   end
 
-  test "Solves derived facts" do
-    solution = Inferencer.NaiveForward.solve(Condition.build_constant(:v))
+  test "Solves direct derived facts" do
+    solution = Inferencer.NaiveBackward.solve(Condition.build_constant(:s))
+    assert solution == Fact.new(:s)
+  end
+
+  test "Solves indirect derived facts" do
+    solution = Inferencer.NaiveBackward.solve(Condition.build_constant(:v))
     assert solution == Fact.new(:v)
   end
 
   test "Detects unsolvable conditions" do
-    solution = Inferencer.NaiveForward.solve(Condition.build_constant(:m))
+    solution = Inferencer.NaiveBackward.solve(Condition.build_constant(:m))
     assert solution == :unsolvable
   end
 
