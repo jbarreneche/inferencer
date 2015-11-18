@@ -1,9 +1,15 @@
 defmodule Production do
   defstruct name: "empty", lhs: [], rhs: []
 
-  def matchings(production, facts) do
+  def matchings_lhs(production, facts) do
     for { _binding, token } <- find_all_matchings(production.lhs, facts, %{}) do
       { production, token }
+    end
+  end
+
+  def matchings_rhs(production, goals, binding \\ %{}) do
+    for { binding, token } <- find_all_matchings(goals, production.rhs, binding) do
+      { production, binding }
     end
   end
 
