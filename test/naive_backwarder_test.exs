@@ -78,7 +78,8 @@ defmodule NaiveBackwardTest do
     Inferencer.assert(Condition.build("Fritz", "croacks"))
     Inferencer.assert(Condition.build("Fritz", "eats", "flies"))
 
-    solution = Inferencer.NaiveBackward.solve(Condition.build("Fritz", "color", :type))
+    solution = Inferencer.NaiveBackward.solve(Condition.build(:T, "color", "green"))
+    assert solution.entity == "Fritz"
     assert solution.value == "green"
   end
 

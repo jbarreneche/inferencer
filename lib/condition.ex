@@ -12,7 +12,7 @@ defmodule Condition do
     Stream.flat_map(conditions, fn rcondition ->
       case bind(aliased_condition, rcondition, binding) do
         :unboundable -> []
-        new_binding  -> [{ new_binding, aliased_condition }]
+        new_binding  -> [{ new_binding, restrict(aliased_condition, new_binding) }]
       end
     end)
   end
@@ -44,7 +44,7 @@ defmodule Condition do
   defp unbind_field(field, binding) do
     case Binding.get(binding, field) do
       {:ok, value} -> {:constant, value}
-      :error       -> {:variable, field}
+      :error       -> field
     end
   end
 

@@ -14,7 +14,7 @@ defmodule Binding do
     end
   end
 
-  def get(binding, {:constant, value}) do
+  def get(_binding, {:constant, value}) do
     {:ok, value}
   end
   def get(binding, {:variable, name}) do
