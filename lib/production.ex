@@ -1,15 +1,22 @@
 defmodule Production do
   defstruct name: "empty", lhs: [], rhs: []
 
-  def matchings_lhs(production, facts) do
-    for { _binding, token } <- find_all_matchings(production.lhs, facts, %{}) do
-      { production, token }
+  def matchings_lhs(production, goals) do
+    for { binding, _token } <- find_all_matchings(production.lhs, goals, %Binding{}) do
+      {
+        production,
+        Enum.map(production.rhs, fn c -> Condition.restrict(c, binding) end)
+      }
     end
   end
 
-  def matchings_rhs(production, goals, binding \\ %{}) do
-    for { binding, token } <- find_all_matchings(goals, production.rhs, binding) do
-      { production, binding }
+  def matchings_rhs(production, goals) do
+    for { binding, token } <- find_all_matchings(goals, production.rhs, %Binding{}) do
+      {
+        production,
+        Enum.map(production.lhs, fn c -> Condition.restrict(c, binding) end),
+        Enum.map(goals, fn c -> Condition.restrict(c, binding) end)
+      }
     end
   end
 

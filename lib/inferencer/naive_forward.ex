@@ -4,21 +4,22 @@ defmodule Inferencer.NaiveForward do
     { wmes, productions } = Inferencer.state inferencer
     case goal_met?(goal, wmes) do
       nil  -> try_new_solutions(productions, wmes, goal)
-      fact -> fact
+      { binding, _fact } -> Fact.from_condition(goal, binding)
     end
   end
 
   defp try_new_solutions(productions, wmes, goal, conflict_set \\ %HashSet{}) do
-    new_conflicts =
-      Enum.flat_map(productions, fn production -> Production.matchings_lhs(production, wmes) end)
-      |> Enum.into(%HashSet{}) |> Set.difference(conflict_set) |> Set.to_list
+    new_conflicts = productions
+      |> Stream.flat_map(fn production -> Production.matchings_lhs(production, wmes) end)
+      |> Stream.reject(fn production -> Set.member?(conflict_set, production) end)
 
-    case new_conflicts do
+    case new_conflicts |> Enum.take(1) do
       [] -> :unsolvable
-      [ { production, token } | _ ] ->
-        case goal_met?(goal, production.rhs) do
-          nil  -> try_new_solutions(productions, Enum.concat(production.rhs, wmes), goal, Set.put(conflict_set, { production, token }))
-          fact -> fact
+      [ head ] ->
+        { _production, new_facts } = head
+        case goal_met?(goal, new_facts) do
+          nil  -> try_new_solutions(productions, Enum.concat(new_facts, wmes), goal, Set.put(conflict_set, head))
+          { binding, _fact } -> Fact.from_condition(goal, binding)
         end
     end
   end
@@ -27,7 +28,7 @@ defmodule Inferencer.NaiveForward do
     Enum.find_value(wmes, fn fact ->
       case Condition.bind(goal, fact) do
         :unboundable -> nil
-        _binding     -> fact
+        binding     -> { binding, fact }
       end
     end)
   end
