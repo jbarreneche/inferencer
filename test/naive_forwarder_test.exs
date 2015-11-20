@@ -69,7 +69,7 @@ defmodule NaiveForwardTest do
     Inferencer.assert(Condition.build("Fritz", "croacks"))
     Inferencer.assert(Condition.build("Fritz", "eats", "flies"))
 
-    solution = Inferencer.NaiveForward.solve(Condition.build("Fritz", "color", :type))
+    solution = Inferencer.NaiveForward.solve(Condition.build("Fritz", "color", :X))
     assert solution.value == "green"
   end
 
