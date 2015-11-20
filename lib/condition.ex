@@ -7,6 +7,14 @@ defmodule Condition do
     }
   end
 
+  def from_tuple({ value }), do: from_tuple({ "self", "value", value })
+  def from_tuple({ entity, value }), do: from_tuple({ entity, "value", value })
+  def from_tuple({ entity, attribute, value }) do
+    %Condition{
+      entity: wrap(entity), attribute: wrap(attribute), value: wrap(value)
+    }
+  end
+
   def filter(condition, conditions, binding) do
     aliased_condition = isolate_variables(condition)
     Stream.flat_map(conditions, fn rcondition ->

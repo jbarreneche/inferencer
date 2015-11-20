@@ -1,6 +1,12 @@
 defmodule Production do
   defstruct name: "empty", lhs: [], rhs: []
-  require IEx
+
+  def build(lhs, rhs) do
+    %Production{
+      lhs: lhs |> Enum.map(&Condition.from_tuple/1),
+      rhs: rhs |> Enum.map(&Condition.from_tuple/1)
+    }
+  end
 
   def matchings_lhs(production, goals, binding \\ %Binding{}) do
     for { binding, _token } <- find_all_matchings(production.lhs, goals, binding) do

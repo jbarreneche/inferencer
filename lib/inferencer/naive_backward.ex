@@ -10,7 +10,7 @@ defmodule Inferencer.NaiveBackward do
   def solve_all(inferencer \\ Inferencer, goal) do
     { wmes, productions } = Inferencer.state inferencer
 
-    for { binding, [goal_fact] } <- find_all_solutions(productions, wmes, [ goal ], %Binding{}) do
+    for { binding, [goal_fact] } <- find_all_solutions(productions, wmes, [ Condition.from_tuple(goal) ], %Binding{}) do
       Fact.from_condition(goal_fact, binding)
     end
   end

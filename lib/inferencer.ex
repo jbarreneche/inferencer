@@ -13,8 +13,8 @@ defmodule Inferencer do
     Agent.update(inferencer, &prepend_to_memory(&1, new_fact))
   end
 
-  def add_rule(inferencer \\ __MODULE__, new_production) do
-    Agent.update(inferencer, &prepend_to_productions(&1, new_production))
+  def add_rule(inferencer \\ __MODULE__, left, right) do
+    Agent.update(inferencer, &prepend_to_productions(&1, left, right))
   end
 
   def state(inferencer \\ __MODULE__) do
@@ -30,11 +30,11 @@ defmodule Inferencer do
   end
 
   defp prepend_to_memory(inferencer, fact) do
-    %Inferencer{ inferencer | working_memory: Set.put(inferencer.working_memory, fact) }
+    %Inferencer{ inferencer | working_memory: Set.put(inferencer.working_memory, Condition.from_tuple(fact)) }
   end
 
-  defp prepend_to_productions(inferencer, production) do
-    %Inferencer{ inferencer | productions: [ production | inferencer.productions ] }
+  defp prepend_to_productions(inferencer, left, right) do
+    %Inferencer{ inferencer | productions: [ Production.build(left, right) | inferencer.productions ] }
   end
 
 end

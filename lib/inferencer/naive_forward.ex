@@ -9,6 +9,7 @@ defmodule Inferencer.NaiveForward do
 
   def solve_all(inferencer \\ Inferencer, goal) do
     { wmes, productions } = Inferencer.state(inferencer)
+    goal = Condition.from_tuple(goal)
 
     Stream.concat(
       find_in_memory(goal, wmes),
