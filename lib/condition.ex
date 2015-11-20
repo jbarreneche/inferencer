@@ -1,29 +1,72 @@
 defmodule Condition do
-  defstruct entity: {:constant, :self}, attribute: {:constant, :identity}, value: {:constant, :self}
+  defstruct entity: {:constant, "self"}, attribute: {:constant, "identity"}, value: {:constant, "self"}
 
-  def build_constant(entity \\ :self, attribute \\ :value, value) do
+  def build(entity \\ "self", attribute \\ "value", value) do
     %Condition{
-      entity: {:constant, entity}, attribute: {:constant, attribute}, value: {:constant, value}
+      entity: wrap(entity), attribute: wrap(attribute), value: wrap(value)
     }
   end
 
-  def bind(condition, fact, binding \\ %{}) do
-    binding |>
-      match_part(condition.entity, fact.entity) |>
-      match_part(condition.attribute, fact.attribute) |>
-      match_part(condition.value, fact.value)
+  def from_tuple({ value }), do: from_tuple({ "self", "value", value })
+  def from_tuple({ entity, value }), do: from_tuple({ entity, "value", value })
+  def from_tuple({ entity, attribute, value }) do
+    %Condition{
+      entity: wrap(entity), attribute: wrap(attribute), value: wrap(value)
+    }
   end
 
-  defp match_part(:unboundable, _variable, _value), do: :unboundable
-  defp match_part(binding, {:constant, value}, value), do: binding
-  defp match_part(_binding, {:constant, _expected}, _value), do: :unboundable
+  def filter(condition, conditions, binding) do
+    aliased_condition = isolate_variables(condition)
+    Stream.flat_map(conditions, fn rcondition ->
+      case bind(aliased_condition, rcondition, binding) do
+        :unboundable -> []
+        new_binding  -> [{ new_binding, restrict(aliased_condition, new_binding) }]
+      end
+    end)
+  end
 
-  defp match_part(binding, {:variable, name}, value) do
-    case Dict.get(binding, name) do
-      nil    -> Dict.put(binding, name, value)
-      ^value -> binding
-      _      -> :unboundable
+  # Rename to unify
+  def bind(lcondition, rcondition, binding \\ %Binding{}) do
+    binding
+      |> Binding.unify(lcondition.entity,    rcondition.entity)
+      |> Binding.unify(lcondition.attribute, rcondition.attribute)
+      |> Binding.unify(lcondition.value,     rcondition.value)
+  end
+
+  def restrict(condition, binding) do
+    %Condition{
+      entity:    unbind_field(condition.entity, binding),
+      attribute: unbind_field(condition.attribute, binding),
+      value:     unbind_field(condition.value, binding)
+    }
+  end
+
+  defp isolate_variables(condition) do
+    %Condition{
+      entity:    alias_field(condition.entity),
+      attribute: alias_field(condition.attribute),
+      value:     alias_field(condition.value)
+    }
+  end
+
+  defp unbind_field(field, binding) do
+    case Binding.get(binding, field) do
+      {:ok, value} -> {:constant, value}
+      :error       -> field
     end
+  end
+
+  defp wrap(value) when is_atom(value) do
+    {:variable, value}
+  end
+
+  defp wrap(value) do
+    {:constant, value}
+  end
+
+  defp alias_field({:constant, value}), do: {:constant, value}
+  defp alias_field({:variable, name}) do
+    {:variable, Atom.to_char_list(name)}
   end
 
 end

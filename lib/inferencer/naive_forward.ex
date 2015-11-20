@@ -1,34 +1,42 @@
 defmodule Inferencer.NaiveForward do
 
   def solve(inferencer \\ Inferencer, goal) do
-    { wmes, productions } = Inferencer.state inferencer
-    case goal_met?(goal, wmes) do
-      nil  -> try_new_solutions(productions, wmes, goal)
-      fact -> fact
+    case solve_all(inferencer, goal) |> Enum.take(1) do
+      [] -> :unsolvable
+      [ solution ] -> solution
     end
+  end
+
+  def solve_all(inferencer \\ Inferencer, goal) do
+    { wmes, productions } = Inferencer.state(inferencer)
+    goal = Condition.from_tuple(goal)
+
+    Stream.concat(
+      find_in_memory(goal, wmes),
+      try_new_solutions(productions, wmes, goal)
+    )
   end
 
   defp try_new_solutions(productions, wmes, goal, conflict_set \\ %HashSet{}) do
-    new_conflicts =
-      Enum.flat_map(productions, fn production -> Production.matchings_lhs(production, wmes) end)
-      |> Enum.into(%HashSet{}) |> Set.difference(conflict_set) |> Set.to_list
+    new_conflicts = productions
+      |> Stream.flat_map(fn production -> Production.matchings_lhs(production, wmes) end)
+      |> Stream.reject(fn production -> Set.member?(conflict_set, production) end)
 
-    case new_conflicts do
-      [] -> :unsolvable
-      [ { production, token } | _ ] ->
-        case goal_met?(goal, production.rhs) do
-          nil  -> try_new_solutions(productions, Enum.concat(production.rhs, wmes), goal, Set.put(conflict_set, { production, token }))
-          fact -> fact
-        end
+    case new_conflicts |> Enum.take(1) do
+      [
+        { production, new_facts }
+      ] ->
+        Stream.concat(
+          find_in_memory(goal, new_facts),
+          try_new_solutions(productions, Enum.concat(new_facts, wmes), goal, Set.put(conflict_set, { production, new_facts }))
+        )
+      [] -> []
     end
   end
 
-  defp goal_met?(goal, wmes) do
-    Enum.find_value(wmes, fn fact ->
-      case Condition.bind(goal, fact) do
-        :unboundable -> nil
-        _binding     -> fact
-      end
-    end)
+  defp find_in_memory(goal, wmes) do
+    for { binding, goal_fact } <- Condition.filter(goal, wmes, %Binding{}) do
+      Fact.from_condition(goal_fact, binding)
+    end
   end
 end
